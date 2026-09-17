@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SAFEGUARD NEXUS — Self-Service Kiosk</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #07090f 0%, #0b0e18 100%);
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(26, 37, 64, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(26, 37, 64, 0.15) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .kiosk-container {
+            width: 100%;
+            max-width: 960px;
+            background: rgba(15, 20, 34, 0.95);
+            border: 1px solid #1a2540;
+            border-radius: 16px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 212, 255, 0.1);
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+        }
+        .kiosk-header {
+            background: #0b0e18;
+            padding: 24px 30px;
+            border-bottom: 2px solid #00d4ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .kiosk-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .kiosk-title h1 {
+            color: #00d4ff;
+            font-size: 26px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+        }
+        .kiosk-title p {
+            color: #718096;
+            font-size: 13px;
+        }
+        .kiosk-clock {
+            font-size: 20px;
+            color: #00ff88;
+            font-weight: bold;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        .mode-tabs {
+            display: flex;
+            background: #0b0e18;
+            border-bottom: 1px solid #1a2540;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 20px;
+            background: transparent;
+            border: none;
+            color: #718096;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        .mode-btn.active {
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.08);
+            border-bottom: 3px solid #00d4ff;
+        }
+        .kiosk-body {
+            padding: 35px;
+        }
+        .view-section {
+            display: none;
+        }
+        .view-section.active {
+            display: block;
+        }
+        /* QR Scanner Section */
+        .qr-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: center;
+        }
+        .camera-box {
+            position: relative;
+            background: #07090f;
+            border: 2px dashed #1a2540;
+            border-radius: 12px;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .camera-box video, .camera-box canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .scan-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .target-reticle {
+            width: 200px;
+            height: 200px;
+            border: 2px solid #00d4ff;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            position: relative;
+        }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+            animation: scanAnim 2s infinite ease-in-out;
+            position: absolute;
+        }
+        @keyframes scanAnim {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+        .manual-input-box {
+            background: #0b0e18;
+            border: 1px solid #1a2540;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .manual-input-box h3 {
+            color: #00d4ff;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        .manual-input-box p {
+            color: #a0aec0;
+            font-size: 13px;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: #07090f;
+            border: 1px solid #1a2540;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        /* Buttons */
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            background: #00d4ff;
+            color: #07090f;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-action:hover {
+            background: #33ddff;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-action:disabled {
+            background: #1a2540;
+            color: #718096;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .purpose-pills {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .pill-btn {
+            padding: 10px 8px;
+            background: #07090f;
+            border: 1px solid #1a2540;
+            color: #a0aec0;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .pill-btn.selected {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: #00d4ff;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        /* Success Pass Card Modal */
+        .badge-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 9, 15, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .badge-modal.show {
+            display: flex;
+        }
+        .badge-card {
+            background: #0f1422;
+            border: 2px solid #00ff88;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 460px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.2);
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .badge-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .badge-card h2 {
+            color: #00ff88;
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+        .badge-card p {
+            color: #718096;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .visitor-photo-box {
+            width: 130px;
+            height: 130px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #00d4ff;
+            background: #07090f;
+        }
+        .visitor-photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .badge-info-table {
+            width: 100%;
+            background: #0b0e18;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 14px;
+        }
+        .badge-info-table tr td:first-child {
+            color: #718096;
+            width: 38%;
+            padding: 4px 0;
+        }
+        .badge-info-table tr td:last-child {
+            color: #e2e8f0;
+            font-weight: bold;
+        }
+        .kiosk-footer-nav {
+            padding: 15px 35px;
+            background: #07090f;
+            border-top: 1px solid #1a2540;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .kiosk-footer-nav a {
+            color: #718096;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+        .kiosk-footer-nav a:hover {
+            color: #00d4ff;
+        }
+        .threat-banner {
+            background: rgba(255, 61, 61, 0.15);
+            border: 1px solid #ff3d3d;
+            color: #ff3d3d;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="kiosk-container">
+        <!-- Kiosk Header -->
+        <div class="kiosk-header">
+            <div class="kiosk-title">
+                <div style="font-size: 32px; color: #00d4ff;">⬡</div>
+                <div>
+                    <h1>SAFEGUARD NEXUS</h1>
+                    <p>Self-Service Visitor Check-In Kiosk</p>
+                </div>
+            </div>
+            <div class="kiosk-clock" id="liveClock">00:00:00</div>
+        </div>
+
+        <!-- Mode Select Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-btn active" id="tabQr" onclick="switchMode('qr')">
+                <span>📱</span> Scan QR Pass
+            </button>
+            <button class="mode-btn" id="tabWalkin" onclick="switchMode('walkin')">
+                <span>✍️</span> Express Self Check-In
+            </button>
+        </div>
+
+        <div class="kiosk-body">
+            <div id="threatBanner" class="threat-banner"></div>
+
+            <!-- MODE 1: QR CODE FAST PASS SCAN -->
+            <div id="viewQr" class="view-section active">
+                <div class="qr-wrapper">
+                    <div class="camera-box" id="cameraBox">
+                        <video id="qrVideo" autoplay playsinline></video>
+                        <canvas id="qrCanvas" style="display:none;"></canvas>
+                        <div class="scan-overlay">
+                            <div class="target-reticle">
+                                <div class="scan-line"></div>
+                            </div>
+                            <p style="margin-top: 14px; font-size: 13px; color: #00d4ff; background: rgba(7,9,15,0.8); padding: 4px 12px; border-radius: 4px;">
+                                Hold pre-registration QR in view
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="manual-input-box">
+                        <h3>⚡ Express QR Check-In</h3>
+                        <p>If you pre-registered online, position your digital or printed QR pass in front of the camera, or enter your reference code below.</p>
+                        
+                        <div class="input-group">
+                            <label>Passcode / Token</label>
+                            <input type="text" id="manualToken" placeholder="e.g. 8f9a2b1c4e..." />
+                        </div>
+                        <button class="btn-action" onclick="lookupManualToken()">
+                            <span>🔍</span> Verify & Check In
+                        </button>
+                        
+                        <div style="margin-top: 20px; font-size: 12px; color: #718096; text-align: center;">
+                            Need to register? <a href="/pre-register" style="color: #00d4ff; text-decoration: none;">Pre-register here</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE 2: EXPRESS WALKIN CHECKIN -->
+            <div id="viewWalkin" class="view-section">
+                <div class="qr-wrapper">
+                    <!-- Left: Camera Preview for Snapshot -->
+                    <div>
+                        <div class="camera-box" style="margin-bottom: 16px;">
+                            <video id="walkinVideo" autoplay playsinline></video>
+                            <canvas id="walkinCanvas" style="display:none;"></canvas>
+                        </div>
+                        <button class="btn-action" style="background:#0b0e18; color:#00d4ff; border:1px solid #00d4ff;" onclick="captureWalkinPhoto()" id="btnCapturePhoto">
+                            <span>📷</span> Capture Photo Snapshot
+                        </button>
+                    </div>
+
+                    <!-- Right: Form -->
+                    <form id="kioskWalkinForm" onsubmit="submitWalkin(event)">
+                        <div class="input-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="wName" required placeholder="Jane Doe" />
+                        </div>
+
+                        <div class="input-group">
+                            <label>Purpose of Visit</label>
+                            <div class="purpose-pills">
+                                <div class="pill-btn selected" onclick="selectPurpose(this, 'Meeting')">Meeting</div>
+                                <div class="pill-btn" onclick="selectPurpose(this, 'Interview')">Interview</div>
+                                <div class="pill-btn" onclick="selectPurpose(this, 'Delivery')">Delivery</div>
+                                <div class="pill-btn" onclick="selectPurpose(this, 'Contractor')">Contractor</div>
+                                <div class="pill-btn" onclick="selectPurpose(this, 'Guest')">Guest</div>
+                                <div class="pill-btn" onclick="selectPurpose(this, 'Other')">Other</div>
+                            </div>
+                            <input type="hidden" id="wPurpose" value="Meeting" />
+                        </div>
+
+                        <div class="input-group">
+                            <label>Host / Person to Meet *</label>
+                            <input type="text" id="wHost" required placeholder="Employee Name" />
+                        </div>
+
+                        <div class="input-group">
+                            <label>Host Email (For Arrival Alert)</label>
+                            <input type="email" id="wHostEmail" placeholder="host@company.com" />
+                        </div>
+
+                        <div class="input-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="wPhone" placeholder="+1 (555) 000-0000" />
+                        </div>
+
+                        <button type="submit" class="btn-action" id="btnSubmitWalkin">
+                            <span>✓</span> Complete Check-In & Get Badge
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Nav -->
+        <div class="kiosk-footer-nav">
+            <a href="/">← Return to Main Portal</a>
+            <span style="color: #4a5568; font-size: 12px;">SAFEGUARD NEXUS KIOSK v2.4</span>
+            <a href="/gate-entry">Security Guard View →</a>
+        </div>
+    </div>
+
+    <!-- DIGITAL BADGE POPUP MODAL -->
+    <div class="badge-modal" id="badgeModal">
+        <div class="badge-card">
+            <div class="badge-icon">✓</div>
+            <h2>Access Granted</h2>
+            <p>Welcome to the building. Your digital badge has been activated.</p>
+
+            <div class="visitor-photo-box" id="bPhotoBox">
+                <img id="bPhoto" src="/static/images/avatar_placeholder.png" alt="Visitor" />
+            </div>
+
+            <table class="badge-info-table">
+                <tr><td>Name:</td><td id="bName">-</td></tr>
+                <tr><td>Host:</td><td id="bHost">-</td></tr>
+                <tr><td>Purpose:</td><td id="bPurpose">-</td></tr>
+                <tr><td>Check-In:</td><td id="bTime">-</td></tr>
+                <tr><td>Face Status:</td><td id="bFaceStatus">-</td></tr>
+            </table>
+
+            <div style="display: flex; gap: 12px;">
+                <button class="btn-action" onclick="printBadgeFromKiosk()" style="flex:1;">
+                    <span>🖨️</span> Print Badge
+                </button>
+                <button class="btn-action" onclick="closeBadgeModal()" style="background:#1a2540; color:#e2e8f0; flex:1;">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'qr';
+        let stream = null;
+        let capturedPhotoBlob = null;
+        let lastBadgeUrl = null;
+
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0];
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Audio Tone Generator (No external audio file needed)
+        function playChime(success = true) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                if (success) {
+                    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+                } else {
+                    osc.frequency.setValueAtTime(300, ctx.currentTime);
+                    osc.frequency.setValueAtTime(200, ctx.currentTime + 0.15);
+                }
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {}
+        }
+
+        // Camera Management
+        async function startCamera(videoElementId) {
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+                });
+                const vid = document.getElementById(videoElementId);
+                if (vid) vid.srcObject = stream;
+            } catch (err) {
+                console.warn('Camera access fallback:', err);
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('tabQr').classList.toggle('active', mode === 'qr');
+            document.getElementById('tabWalkin').classList.toggle('active', mode === 'walkin');
+            document.getElementById('viewQr').classList.toggle('active', mode === 'qr');
+            document.getElementById('viewWalkin').classList.toggle('active', mode === 'walkin');
+            
+            if (mode === 'qr') {
+                startCamera('qrVideo');
+            } else {
+                startCamera('walkinVideo');
+            }
+        }
+
+        function selectPurpose(el, val) {
+            document.querySelectorAll('.pill-btn').forEach(p => p.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('wPurpose').value = val;
+        }
+
+        // Snapshot
+        function captureWalkinPhoto() {
+            const vid = document.getElementById('walkinVideo');
+            const canvas = document.getElementById('walkinCanvas');
+            canvas.width = vid.videoWidth || 640;
+            canvas.height = vid.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                capturedPhotoBlob = blob;
+                playChime(true);
+                const btn = document.getElementById('btnCapturePhoto');
+                btn.innerHTML = '<span>✓</span> Photo Captured!';
+                btn.style.borderColor = '#00ff88';
+                btn.style.color = '#00ff88';
+            }, 'image/jpeg');
+        }
+
+        // Manual or QR lookup
+        async function lookupManualToken() {
+            let token = document.getElementById('manualToken').value.trim();
+            if (!token) {
+                alert('Please enter a passcode or QR token.');
+                return;
+            }
+            if (token.startsWith('PRE-REGISTRATION:')) {
+                token = token.replace('PRE-REGISTRATION:', '').trim();
+            }
+
+            try {
+                const res = await fetch(`/api/qr-lookup?token=${encodeURIComponent(token)}`);
+                const data = await res.json();
+                if (data.success && data.matched) {
+                    const m = data.preregistration;
+                    
+                    // Auto-take camera snapshot
+                    const vid = document.getElementById('qrVideo');
+                    const canvas = document.getElementById('qrCanvas');
+                    canvas.width = vid.videoWidth || 640;
+                    canvas.height = vid.videoHeight || 480;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+                    
+                    canvas.toBlob(async blob => {
+                        const fd = new FormData();
+                        fd.append('qr_token', token);
+                        fd.append('name', m.name);
+                        fd.append('purpose', m.purpose || 'Meeting');
+                        fd.append('contact_person', m.contact_person);
+                        fd.append('phone', m.phone || 'N/A');
+                        fd.append('photo', blob || new Blob(), 'kiosk_scan.jpg');
+
+                        const cRes = await fetch('/api/visitor-checkin', { method: 'POST', body: fd });
+                        const cData = await cRes.json();
+                        if (cData.success) {
+                            showBadgeModal(cData.visitor, cData.badge_url);
+                        } else {
+                            alert('Check-in error: ' + cData.error);
+                        }
+                    }, 'image/jpeg');
+                } else {
+                    playChime(false);
+                    alert('Invalid or expired pre-registration code.');
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
+            }
+        }
+
+        // Submit Walkin
+        async function submitWalkin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitWalkin');
+            
+            if (!capturedPhotoBlob) {
+                captureWalkinPhoto();
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Processing Security Verification...';
+
+            const fd = new FormData();
+            fd.append('name', document.getElementById('wName').value.trim());
+            fd.append('purpose', document.getElementById('wPurpose').value);
+            fd.append('contact_person', document.getElementById('wHost').value.trim());
+            fd.append('host_email', document.getElementById('wHostEmail').value.trim());
+            fd.append('phone', document.getElementById('wPhone').value.trim() || 'N/A');
+            fd.append('photo', capturedPhotoBlob, 'kiosk_walkin.jpg');
+
+            try {
+                const res = await fetch('/api/visitor-checkin', { method: 'POST', body: fd });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showBadgeModal(data.visitor, data.badge_url);
+                    document.getElementById('kioskWalkinForm').reset();
+                    capturedPhotoBlob = null;
+                    document.getElementById('btnCapturePhoto').innerHTML = '<span>📷</span> Capture Photo Snapshot';
+                    document.getElementById('btnCapturePhoto').style.borderColor = '#00d4ff';
+                    document.getElementById('btnCapturePhoto').style.color = '#00d4ff';
+                } else {
+                    playChime(false);
+                    alert('Check-in error: ' + (data.error || 'Check-in denied'));
+                }
+            } catch (err) {
+                playChime(false);
+                alert('Submission error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✓</span> Complete Check-In & Get Badge';
+            }
+        }
+
+        function showBadgeModal(v, badgeUrl) {
+            playChime(true);
+            lastBadgeUrl = badgeUrl;
+            document.getElementById('bName').textContent = v.name;
+            document.getElementById('bHost').textContent = v.contact;
+            document.getElementById('bPurpose').textContent = v.purpose;
+            document.getElementById('bTime').textContent = v.time || new Date().toLocaleTimeString();
+            document.getElementById('bFaceStatus').textContent = v.face_status || 'CHECKED_IN';
+            
+            if (v.threat_detected && v.threat_category === 'BLACKLIST') {
+                const tb = document.getElementById('threatBanner');
+                tb.textContent = `🚨 SECURITY ALERT: Individual identified on Watchlist (${v.threat_reason}). Security notified.`;
+                tb.style.display = 'block';
+            }
+            
+            document.getElementById('badgeModal').classList.add('show');
+        }
+
+        function closeBadgeModal() {
+            document.getElementById('badgeModal').classList.remove('show');
+        }
+
+        function printBadgeFromKiosk() {
+            if (lastBadgeUrl) {
+                window.open(lastBadgeUrl, '_blank');
+            }
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            startCamera('qrVideo');
+        };
+    </script>
+</body>
+</html>

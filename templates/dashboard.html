@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFEGUARD NEXUS - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #07090f 0%, #0b0e18 100%);
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            min-height: 100vh;
+        }
+        
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(26, 37, 64, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(26, 37, 64, 0.1) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: -2;
+        }
+        
+        .header {
+            background: rgba(15, 20, 34, 0.8);
+            border-bottom: 2px solid #1a2540;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #00d4ff;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: 1px solid #1a2540;
+            border-radius: 8px;
+            background: #0f1422;
+            color: #00d4ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .btn:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .btn-logout {
+            background: #ff3d3d;
+            color: #fff;
+            border-color: #ff3d3d;
+        }
+        
+        .btn-logout:hover {
+            background: #cc3030;
+            box-shadow: 0 0 15px rgba(255, 61, 61, 0.2);
+        }
+        
+        .notification-banner {
+            background: rgba(255, 183, 0, 0.1);
+            border: 1px solid #ffb700;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin: 10px 0;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .notification-banner.warning {
+            background: rgba(255, 183, 0, 0.1);
+            border-color: #ffb700;
+            color: #ffb700;
+        }
+        
+        .notification-banner .message {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .notification-banner .action {
+            font-size: 12px;
+            text-decoration: none;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .notification-banner .action:hover {
+            text-decoration: underline;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            color: #00d4ff;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #004d5e;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 10px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.15);
+        }
+        
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            color: #00d4ff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .chart-card h3 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #1a2540;
+        }
+        
+        .tab-btn {
+            padding: 12px 18px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #718096;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-btn:hover {
+            color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .timeline-container {
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .timeline-loading {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+            font-size: 14px;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 40px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: -20px;
+            width: 2px;
+            background: #1a2540;
+        }
+        
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #07090f;
+            font-weight: bold;
+        }
+        
+        .timeline-marker.checkin {
+            background: #00ff88;
+        }
+        
+        .timeline-marker.checkout {
+            background: #ffb700;
+        }
+        
+        .timeline-marker.alert {
+            background: #ff3d3d;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            background: #0b0e18;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid #00d4ff;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-name {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .timeline-time {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .timeline-details {
+            color: #e2e8f0;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-checked-in {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .status-checked-out {
+            background: rgba(255, 183, 0, 0.2);
+            color: #ffb700;
+        }
+        
+        .status-alert {
+            background: rgba(255, 61, 61, 0.2);
+            color: #ff3d3d;
+        }
+        
+        .table-container {
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #0b0e18;
+            border-bottom: 2px solid #1a2540;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            color: #00d4ff;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #1a2540;
+            font-size: 13px;
+        }
+        
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .badge-verified {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .badge-unknown {
+            background: rgba(255, 183, 0, 0.2);
+            color: #ffb700;
+            border: 1px solid #ffb700;
+        }
+        
+        .badge-obstruction {
+            background: rgba(255, 61, 61, 0.2);
+            color: #ff3d3d;
+            border: 1px solid #ff3d3d;
+        }
+        
+        .badge-checked-in {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .badge-checked-out {
+            background: rgba(255, 183, 0, 0.2);
+            color: #ffb700;
+            border: 1px solid #ffb700;
+        }
+        
+        .search-box {
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 8px;
+            padding: 12px;
+            color: #e2e8f0;
+            font-family: inherit;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+        
+        .bulk-actions {
+            background: #0b0e18;
+            border: 1px solid #1a2540;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .bulk-actions .action-btn {
+            margin: 0;
+        }
+        
+        .filters-section {
+            background: #0b0e18;
+            border: 1px solid #1a2540;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+        
+        .filter-group label {
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 8px;
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 4px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .custom-date-range {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        .filter-presets {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #1a2540;
+        }
+        
+        .filter-presets label {
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .filter-presets select {
+            padding: 6px;
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 4px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            background: #00d4ff;
+            color: #07090f;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: #0099cc;
+            transform: scale(1.05);
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .status-live {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 12px;
+            margin: 10% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #1a2540;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            color: #00d4ff;
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .modal-close {
+            color: #718096;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            color: #ff3d3d;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #e2e8f0;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #0b0e18;
+            border: 1px solid #1a2540;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <header class="header">
+        <h1>⬡ SAFEGUARD NEXUS - Admin Dashboard</h1>
+        <div class="header-actions">
+            <span class="status-badge status-live">🟢 Live</span>
+            <a href="/settings" class="btn">⚙️ Settings</a>
+            <a href="/logout" class="btn btn-logout">Logout</a>
+        </div>
+    </header>
+    
+    <div id="emailNotification" class="notification-banner warning">
+        <div class="message">⚠️ Email alerts are not configured. Security alerts won't be sent via email.</div>
+        <a href="/settings" class="action">Configure Now →</a>
+    </div>
+    
+    <div class="container">
+        <!-- Key Metrics -->
+        <div class="section-title">📊 Key Metrics</div>
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="todayCount">0</div>
+                <div class="stat-label">Today's Visitors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total Visitors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✓</div>
+                <div class="stat-value" id="verifiedCount">0</div>
+                <div class="stat-label">Verified Matches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value" id="alertCount">0</div>
+                <div class="stat-label">Alert Events</div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="section-title">📉 Analytics</div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Daily Visitor Trends</h3>
+                <canvas id="dailyChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Visitor Purpose Distribution</h3>
+                <canvas id="purposeChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Visitor Timeline -->
+        <div class="section-title">⏱️ Visitor Timeline</div>
+        <div class="timeline-container" id="timelineContainer">
+            <div class="timeline-loading">Loading timeline...</div>
+        </div>
+        
+        <!-- Logs Section -->
+        <div class="section-title">📋 Recent Activity</div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(this, 'visitors')">Visitor Logs</button>
+            <button class="tab-btn" onclick="switchTab(this, 'alerts')">Security Alerts</button>
+            <button class="tab-btn" onclick="switchTab(this, 'users')">User Management</button>
+        </div>
+        
+        <!-- Visitor Logs Tab -->
+        <div id="visitors" class="tab-content active">
+            <input type="text" class="search-box" id="searchInput" placeholder="Search by name or contact person...">
+            
+            <!-- Advanced Filters -->
+            <div class="filters-section" id="filtersSection">
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label>Time Period:</label>
+                        <select id="timeFilter">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Status:</label>
+                        <select id="statusFilter">
+                            <option value="all">All Status</option>
+                            <option value="checked_in">Checked In</option>
+                            <option value="checked_out">Checked Out</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Face Status:</label>
+                        <select id="faceFilter">
+                            <option value="all">All</option>
+                            <option value="VERIFIED">Verified</option>
+                            <option value="UNKNOWN">Unknown</option>
+                            <option value="OBSTRUCTION_ALERT">Alert</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Confidence:</label>
+                        <select id="confidenceFilter">
+                            <option value="all">All</option>
+                            <option value="high">High (>80%)</option>
+                            <option value="medium">Medium (50-80%)</option>
+                            <option value="low">Low (<50%)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button class="btn btn-secondary" onclick="applyFilters()">Apply Filters</button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+                        <button class="btn btn-secondary" onclick="saveFilterPreset()">Save Preset</button>
+                    </div>
+                </div>
+                
+                <div class="custom-date-range" id="customDateRange" style="display: none;">
+                    <div class="filter-group">
+                        <label>From Date:</label>
+                        <input type="date" id="fromDate">
+                    </div>
+                    <div class="filter-group">
+                        <label>To Date:</label>
+                        <input type="date" id="toDate">
+                    </div>
+                </div>
+                
+                <div class="filter-presets" id="filterPresets">
+                    <label>Saved Presets:</label>
+                    <select id="presetSelect">
+                        <option value="">Select Preset</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="loadPreset()">Load</button>
+                    <button class="btn btn-secondary" onclick="deletePreset()">Delete</button>
+                </div>
+            </div>
+            
+            <!-- Bulk Operations -->
+            <div class="bulk-actions" id="bulkActions" style="display: none;">
+                <button class="action-btn" onclick="bulkCheckout()">Bulk Checkout Selected</button>
+                <button class="action-btn" onclick="bulkDelete()" style="background: #ff3d3d;">Delete Selected</button>
+                <button class="action-btn" onclick="selectAll()" id="selectAllBtn">Select All</button>
+                <span id="selectedCount">0 selected</span>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Purpose</th>
+                            <th>Contact</th>
+                            <th>Phone</th>
+                            <th>Entry Time</th>
+                            <th>Exit Time</th>
+                            <th>Face Status</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTable">
+                        <tr><td colspan="11" style="text-align: center; color: #718096;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Security Alerts Tab -->
+        <div id="alerts" class="tab-content">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Visitor</th>
+                            <th>Alert Type</th>
+                            <th>Timestamp</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTable">
+                        <tr><td colspan="6" style="text-align: center; color: #718096;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- User Management Tab -->
+        <div id="users" class="tab-content">
+            <div class="bulk-actions" style="margin-bottom: 20px;">
+                <button class="action-btn" onclick="showAddUserModal()">➕ Add New User</button>
+                <button class="action-btn" onclick="refreshUsers()">🔄 Refresh</button>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Last Login</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <tr><td colspan="7" style="text-align: center; color: #718096;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Management Modal -->
+    <div id="userModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New User</h3>
+                <span class="modal-close" onclick="closeUserModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId" name="userId">
+                    
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role" name="role" required>
+                            <option value="admin">Administrator</option>
+                            <option value="operator">Operator</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Save User</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let dailyChart, purposeChart;
+        
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/visitor-stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('todayCount').textContent = data.stats.today;
+                    document.getElementById('totalCount').textContent = data.stats.total;
+                }
+            } catch (e) {
+                console.error('Error loading stats:', e);
+            }
+        }
+        
+        // Check email configuration
+        async function checkEmailConfig() {
+            try {
+                const response = await fetch('/api/settings');
+                const data = await response.json();
+                
+                const emailNotification = document.getElementById('emailNotification');
+                if (data.email && data.email.senderEmail && data.email.recipientEmail && data.email.enableEmailAlerts) {
+                    emailNotification.style.display = 'none';
+                } else {
+                    emailNotification.style.display = 'flex';
+                }
+            } catch (e) {
+                console.error('Error checking email config:', e);
+            }
+        }
+        
+        // Load visitor logs
+        async function loadLogs() {
+            try {
+                // Build query parameters from filters
+                const params = new URLSearchParams();
+                params.append('limit', '50');
+                
+                if (currentFilters.timePeriod !== 'all') {
+                    params.append('timePeriod', currentFilters.timePeriod);
+                }
+                if (currentFilters.status !== 'all') {
+                    params.append('status', currentFilters.status);
+                }
+                if (currentFilters.faceStatus !== 'all') {
+                    params.append('faceStatus', currentFilters.faceStatus);
+                }
+                if (currentFilters.confidence !== 'all') {
+                    params.append('confidence', currentFilters.confidence);
+                }
+                if (currentFilters.fromDate) {
+                    params.append('fromDate', currentFilters.fromDate);
+                }
+                if (currentFilters.toDate) {
+                    params.append('toDate', currentFilters.toDate);
+                }
+                
+                const response = await fetch(`/api/visitor-logs?${params.toString()}`);
+                const data = await response.json();
+                
+                if (data.success && data.logs) {
+                    const tbody = document.getElementById('logsTable');
+                    tbody.innerHTML = '';
+                    
+                    data.logs.forEach(log => {
+                        const row = document.createElement('tr');
+                        const faceStatusClass = log.face_status === 'VERIFIED' ? 'badge-verified' : 
+                                               log.face_status === 'OBSTRUCTION_ALERT' ? 'badge-obstruction' : 'badge-unknown';
+                        const statusClass = log.status === 'CHECKED_IN' ? 'badge-checked-in' : 'badge-checked-out';
+                        
+                        row.innerHTML = `
+                            <td><input type="checkbox" class="row-checkbox" data-id="${log.id}" onchange="updateBulkActions()"></td>
+                            <td>${log.id}</td>
+                            <td><strong>${log.name}</strong></td>
+                            <td>${log.purpose}</td>
+                            <td>${log.contact_person}</td>
+                            <td>${log.phone}</td>
+                            <td>${log.entry_time}</td>
+                            <td>${log.exit_time || '-'}</td>
+                            <td><span class="badge ${faceStatusClass}">${log.face_status}</span></td>
+                            <td><span class="badge ${statusClass}">${log.status}</span></td>
+                            <td>
+                                ${log.status === 'CHECKED_IN' ? `<button class="action-btn" onclick="checkout(${log.id})">Checkout</button>` : '-'}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading logs:', e);
+            }
+        }
+        
+        // Load alerts
+        async function loadAlerts() {
+            try {
+                const response = await fetch('/api/obstruction-alerts');
+                const data = await response.json();
+                
+                if (data.success && data.alerts) {
+                    const tbody = document.getElementById('alertsTable');
+                    tbody.innerHTML = '';
+                    document.getElementById('alertCount').textContent = data.alerts.length;
+                    
+                    data.alerts.forEach(alert => {
+                        const row = document.createElement('tr');
+                        const statusColor = alert.resolved ? 'badge-checked-out' : 'badge-obstruction';
+                        row.innerHTML = `
+                            <td>${alert.id}</td>
+                            <td>${alert.visitor_name}</td>
+                            <td>${alert.alert_type}</td>
+                            <td>${alert.timestamp}</td>
+                            <td><span class="badge ${statusColor}">${alert.resolved ? 'RESOLVED' : 'ACTIVE'}</span></td>
+                            <td>
+                                ${!alert.resolved ? `<button class="action-btn" onclick="resolveAlert(${alert.id})">Resolve</button>` : '-'}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading alerts:', e);
+            }
+        }
+        
+        // Load analytics data
+        async function loadAnalytics() {
+            try {
+                // Daily trends
+                const dailyResp = await fetch('/api/analytics/daily?days=14');
+                const dailyData = await dailyResp.json();
+                
+                // Purpose distribution
+                const purposeResp = await fetch('/api/analytics/purpose');
+                const purposeData = await purposeResp.json();
+                
+                if (dailyData.success && dailyData.data) {
+                    const dates = dailyData.data.reverse().map(d => d.date);
+                    const counts = dailyData.data.map(d => d.total);
+                    
+                    const ctx = document.getElementById('dailyChart').getContext('2d');
+                    if (dailyChart) dailyChart.destroy();
+                    
+                    dailyChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: 'Daily Visitors',
+                                data: counts,
+                                borderColor: '#00d4ff',
+                                backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { color: '#718096' },
+                                    grid: { color: '#1a2540' }
+                                },
+                                x: {
+                                    ticks: { color: '#718096' },
+                                    grid: { color: '#1a2540' }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                if (purposeData.success && purposeData.data) {
+                    const purposes = purposeData.data.map(d => d.purpose);
+                    const counts = purposeData.data.map(d => d.count);
+                    const colors = ['#00d4ff', '#00ff88', '#ffb700', '#ff3d3d', '#8b5cf6', '#ec4899'];
+                    
+                    const ctx = document.getElementById('purposeChart').getContext('2d');
+                    if (purposeChart) purposeChart.destroy();
+                    
+                    purposeChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: purposes,
+                            datasets: [{
+                                data: counts,
+                                backgroundColor: colors.slice(0, purposes.length),
+                                borderColor: '#0f1422',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { labels: { color: '#e2e8f0' } } }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading analytics:', e);
+            }
+        }
+        
+        // Checkout visitor
+        async function checkout(id) {
+            try {
+                const response = await fetch('/api/visitor-checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✓ Visitor checked out successfully');
+                    loadLogs();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        }
+        
+        // Resolve alert
+        async function resolveAlert(id) {
+            try {
+                const response = await fetch(`/api/obstruction-alerts/${id}/resolve`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✓ Alert resolved');
+                    loadAlerts();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        }
+        
+        // Bulk operations
+        function updateBulkActions() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (checkboxes.length > 0) {
+                bulkActions.style.display = 'flex';
+                selectedCount.textContent = `${checkboxes.length} selected`;
+            } else {
+                bulkActions.style.display = 'none';
+            }
+        }
+        
+        // Advanced filtering
+        let currentFilters = {
+            timePeriod: 'all',
+            status: 'all',
+            faceStatus: 'all',
+            confidence: 'all',
+            fromDate: '',
+            toDate: ''
+        };
+        
+        function applyFilters() {
+            currentFilters.timePeriod = document.getElementById('timeFilter').value;
+            currentFilters.status = document.getElementById('statusFilter').value;
+            currentFilters.faceStatus = document.getElementById('faceFilter').value;
+            currentFilters.confidence = document.getElementById('confidenceFilter').value;
+            
+            if (currentFilters.timePeriod === 'custom') {
+                currentFilters.fromDate = document.getElementById('fromDate').value;
+                currentFilters.toDate = document.getElementById('toDate').value;
+            } else {
+                currentFilters.fromDate = '';
+                currentFilters.toDate = '';
+            }
+            
+            loadLogs();
+        }
+        
+        function clearFilters() {
+            document.getElementById('timeFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('faceFilter').value = 'all';
+            document.getElementById('confidenceFilter').value = 'all';
+            document.getElementById('fromDate').value = '';
+            document.getElementById('toDate').value = '';
+            
+            currentFilters = {
+                timePeriod: 'all',
+                status: 'all',
+                faceStatus: 'all',
+                confidence: 'all',
+                fromDate: '',
+                toDate: ''
+            };
+            
+            loadLogs();
+        }
+        
+        function saveFilterPreset() {
+            const presetName = prompt('Enter preset name:');
+            if (!presetName) return;
+            
+            const presets = JSON.parse(localStorage.getItem('filterPresets') || '{}');
+            presets[presetName] = { ...currentFilters };
+            localStorage.setItem('filterPresets', JSON.stringify(presets));
+            
+            loadFilterPresets();
+            alert('Filter preset saved!');
+        }
+        
+        function loadFilterPresets() {
+            const presets = JSON.parse(localStorage.getItem('filterPresets') || '{}');
+            const select = document.getElementById('presetSelect');
+            select.innerHTML = '<option value="">Select Preset</option>';
+            
+            Object.keys(presets).forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+        }
+        
+        function loadPreset() {
+            const presetName = document.getElementById('presetSelect').value;
+            if (!presetName) return;
+            
+            const presets = JSON.parse(localStorage.getItem('filterPresets') || '{}');
+            const preset = presets[presetName];
+            if (!preset) return;
+            
+            // Apply preset values
+            document.getElementById('timeFilter').value = preset.timePeriod;
+            document.getElementById('statusFilter').value = preset.status;
+            document.getElementById('faceFilter').value = preset.faceStatus;
+            document.getElementById('confidenceFilter').value = preset.confidence;
+            
+            if (preset.timePeriod === 'custom') {
+                document.getElementById('fromDate').value = preset.fromDate;
+                document.getElementById('toDate').value = preset.toDate;
+                document.getElementById('customDateRange').style.display = 'flex';
+            }
+            
+            currentFilters = { ...preset };
+            loadLogs();
+        }
+        
+        function deletePreset() {
+            const presetName = document.getElementById('presetSelect').value;
+            if (!presetName) return;
+            
+            if (!confirm(`Delete preset "${presetName}"?`)) return;
+            
+            const presets = JSON.parse(localStorage.getItem('filterPresets') || '{}');
+            delete presets[presetName];
+            localStorage.setItem('filterPresets', JSON.stringify(presets));
+            
+            loadFilterPresets();
+        }
+        
+        // Time filter change handler
+        document.getElementById('timeFilter').addEventListener('change', function() {
+            const customRange = document.getElementById('customDateRange');
+            customRange.style.display = this.value === 'custom' ? 'flex' : 'none';
+        });
+        
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            updateBulkActions();
+        }
+        
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = !allChecked;
+            });
+            
+            document.getElementById('selectAllCheckbox').checked = !allChecked;
+            updateBulkActions();
+        }
+        
+        async function bulkCheckout() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
+            
+            if (ids.length === 0) return;
+            
+            if (!confirm(`Checkout ${ids.length} selected visitors?`)) return;
+            
+            try {
+                const response = await fetch('/api/bulk-checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: ids })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✓ ${data.checked_out} visitors checked out successfully`);
+                    loadLogs();
+                    loadTimeline();
+                    updateBulkActions();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        }
+        
+        async function bulkDelete() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
+            
+            if (ids.length === 0) return;
+            
+            if (!confirm(`Delete ${ids.length} selected visitor records? This action cannot be undone!`)) return;
+            
+            try {
+                const response = await fetch('/api/bulk-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: ids })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✓ ${data.deleted} records deleted successfully`);
+                    loadLogs();
+                    loadTimeline();
+                    updateBulkActions();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        }
+        
+        // Switch tabs
+        function switchTab(button, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            button.classList.add('active');
+            
+            if (tabName === 'visitors') {
+                loadLogs();
+            } else if (tabName === 'alerts') {
+                loadAlerts();
+            } else if (tabName === 'users') {
+                loadUsers();
+            }
+        }
+        
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', async function(e) {
+            const query = e.target.value;
+            
+            if (query.length < 2) {
+                loadLogs();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/visitor-search?name=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success && data.results) {
+                    const tbody = document.getElementById('logsTable');
+                    tbody.innerHTML = '';
+                    
+                    data.results.forEach(log => {
+                        const row = document.createElement('tr');
+                        const faceStatusClass = log.face_status === 'VERIFIED' ? 'badge-verified' : 
+                                               log.face_status === 'OBSTRUCTION_ALERT' ? 'badge-obstruction' : 'badge-unknown';
+                        const statusClass = log.status === 'CHECKED_IN' ? 'badge-checked-in' : 'badge-checked-out';
+                        
+                        row.innerHTML = `
+                            <td>${log.id}</td>
+                            <td><strong>${log.name}</strong></td>
+                            <td>${log.purpose}</td>
+                            <td>${log.contact_person}</td>
+                            <td>${log.phone}</td>
+                            <td>${log.entry_time}</td>
+                            <td>${log.exit_time || '-'}</td>
+                            <td><span class="badge ${faceStatusClass}">${log.face_status}</span></td>
+                            <td><span class="badge ${statusClass}">${log.status}</span></td>
+                            <td>
+                                ${log.status === 'CHECKED_IN' ? `<button class="action-btn" onclick="checkout(${log.id})">Checkout</button>` : '-'}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (e) {
+                console.error('Search error:', e);
+            }
+        });
+        
+        // Load visitor timeline
+        async function loadTimeline() {
+            try {
+                const response = await fetch('/api/visitor-logs?limit=20');
+                const data = await response.json();
+                
+                const container = document.getElementById('timelineContainer');
+                
+                if (data.success && data.logs && data.logs.length > 0) {
+                    container.innerHTML = '';
+                    
+                    data.logs.forEach(log => {
+                        const item = document.createElement('div');
+                        item.className = 'timeline-item';
+                        
+                        const markerClass = log.status === 'CHECKED_IN' ? 'checkin' : 'checkout';
+                        const markerIcon = log.status === 'CHECKED_IN' ? '📥' : '📤';
+                        const statusClass = log.status === 'CHECKED_IN' ? 'status-checked-in' : 'status-checked-out';
+                        
+                        const time = log.status === 'CHECKED_IN' ? log.entry_time : (log.exit_time || log.entry_time);
+                        const details = log.status === 'CHECKED_IN' 
+                            ? `Checked in for: ${log.purpose}`
+                            : `Checked out after visiting: ${log.contact_person}`;
+                        
+                        item.innerHTML = `
+                            <div class="timeline-marker ${markerClass}">${markerIcon}</div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <div class="timeline-name">${log.name}</div>
+                                    <div class="timeline-time">${time}</div>
+                                </div>
+                                <div class="timeline-details">${details}</div>
+                                <span class="timeline-status ${statusClass}">${log.status.replace('_', ' ')}</span>
+                            </div>
+                        `;
+                        
+                        container.appendChild(item);
+                    });
+                } else {
+                    container.innerHTML = '<div class="timeline-loading">No recent activity to display</div>';
+                }
+            } catch (e) {
+                console.error('Error loading timeline:', e);
+                document.getElementById('timelineContainer').innerHTML = '<div class="timeline-loading">Error loading timeline</div>';
+            }
+        }
+        
+        // Initial load
+        loadStats();
+        loadLogs();
+        loadAnalytics();
+        loadTimeline();
+        checkEmailConfig();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            loadStats();
+            if (document.getElementById('visitors').classList.contains('active')) {
+                loadLogs();
+            } else if (document.getElementById('alerts').classList.contains('active')) {
+                loadAlerts();
+            } else if (document.getElementById('users').classList.contains('active')) {
+                loadUsers();
+            }
+        }, 30000);
+        
+        // User Management Functions
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                
+                if (data.success && data.users) {
+                    const tbody = document.getElementById('usersTable');
+                    tbody.innerHTML = '';
+                    
+                    data.users.forEach(user => {
+                        const row = document.createElement('tr');
+                        const roleBadge = user.role === 'admin' ? 'badge-verified' : 
+                                         user.role === 'operator' ? 'badge-unknown' : 'badge-checked-out';
+                        
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td><strong>${user.username}</strong></td>
+                            <td><span class="badge ${roleBadge}">${user.role.toUpperCase()}</span></td>
+                            <td>${user.created_at}</td>
+                            <td>${user.last_login || 'Never'}</td>
+                            <td><span class="badge badge-checked-in">ACTIVE</span></td>
+                            <td>
+                                <button class="action-btn" onclick="editUser(${user.id})">Edit</button>
+                                <button class="action-btn" onclick="changePassword(${user.id})" style="background: #ffb700;">Password</button>
+                                <button class="action-btn" onclick="deleteUser(${user.id})" style="background: #ff3d3d;">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading users:', e);
+            }
+        }
+        
+        function showAddUserModal() {
+            document.getElementById('modalTitle').textContent = 'Add New User';
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userModal').style.display = 'block';
+        }
+        
+        function editUser(userId) {
+            // Load user data and show modal
+            fetch(`/api/users/${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.user) {
+                        document.getElementById('modalTitle').textContent = 'Edit User';
+                        document.getElementById('userId').value = data.user.id;
+                        document.getElementById('username').value = data.user.username;
+                        document.getElementById('role').value = data.user.role;
+                        document.getElementById('password').required = false;
+                        document.getElementById('confirmPassword').required = false;
+                        document.getElementById('userModal').style.display = 'block';
+                    }
+                })
+                .catch(e => console.error('Error loading user:', e));
+        }
+        
+        function changePassword(userId) {
+            const newPassword = prompt('Enter new password:');
+            if (!newPassword) return;
+            
+            const confirmPassword = prompt('Confirm new password:');
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            fetch(`/api/users/${userId}/password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: newPassword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password changed successfully!');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => alert('Error: ' + e));
+        }
+        
+        function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone!')) return;
+            
+            fetch(`/api/users/${userId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User deleted successfully!');
+                    loadUsers();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => alert('Error: ' + e));
+        }
+        
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+            document.getElementById('userForm').reset();
+            document.getElementById('password').required = true;
+            document.getElementById('confirmPassword').required = true;
+        }
+        
+        // User form submission
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const userId = formData.get('userId');
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            const method = userId ? 'PUT' : 'POST';
+            const url = userId ? `/api/users/${userId}` : '/api/users';
+            
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: formData.get('username'),
+                    password: password,
+                    role: formData.get('role')
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(userId ? 'User updated successfully!' : 'User created successfully!');
+                    closeUserModal();
+                    loadUsers();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(e => alert('Error: ' + e));
+        });
+        
+        function refreshUsers() {
+            loadUsers();
+        }
+    </script>
+</body>
+</html>

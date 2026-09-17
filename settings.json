@@ -1,0 +1,41 @@
+{
+  "badge": {
+    "companyName": "SAFEGUARD NEXUS",
+    "badgeTitle": "Visitor Access Badge",
+    "badgeSize": "standard",
+    "badgeLayout": "vertical",
+    "includeQR": true,
+    "includePhoto": true,
+    "accentColor": "#00d4ff"
+  },
+  "system": {
+    "sessionTimeout": 30,
+    "maxFileSize": 16,
+    "alertEmail": "ethanexcellent33@gmail.com",
+    "theme": "dark",
+    "enableFaceRec": true,
+    "enableAlerts": true,
+    "enableBackup": true
+  },
+  "security": {
+    "maxStayHours": 4,
+    "curfewTime": "18:00",
+    "enableOverstayAlerts": true,
+    "enableHostNotifications": true,
+    "enableLivenessCheck": true,
+    "enableWatchlistSirens": true
+  },
+  "email": {
+    "senderEmail": "wearethelegion99@gmail.com",
+    "senderPassword": "wrxmxczbsbehyxls",
+    "recipientEmail": "ethanexcellent33@gmail.com",
+    "smtpServer": "smtp.gmail.com",
+    "smtpPort": 587,
+    "enableEmailAlerts": true
+  },
+  "telegram": {
+    "botToken": "8741425690:AAEcseZXx4aynPKHNAYH4K95R-SNDBXKIag",
+    "chatId": "7201036895",
+    "enableTelegram": true
+  }
+}

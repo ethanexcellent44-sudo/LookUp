@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - SAFEGUARD NEXUS</title>
+    <style>
+        :root {
+            --bg-primary: #07090f;
+            --bg-secondary: #0b0e18;
+            --bg-card: #0f1422;
+            --text-primary: #e2e8f0;
+            --text-secondary: #718096;
+            --border-color: #1a2540;
+            --accent-color: #00d4ff;
+            --success-color: #00ff88;
+            --danger-color: #ff3d3d;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+        }
+
+        .header {
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border-color);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: var(--accent-color);
+            font-size: 28px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav a {
+            color: var(--accent-color);
+            text-decoration: none;
+            margin-right: 20px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav a:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--accent-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.1);
+        }
+
+        .settings-card h3 {
+            color: var(--accent-color);
+            font-size: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 8px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: #00d4ff;
+            border: none;
+            border-radius: 6px;
+            color: #07090f;
+            padding: 12px 24px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: #00a8cc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: #1a2540;
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .badge-preview {
+            background: #0b0e18;
+            border: 1px solid #1a2540;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .badge-preview h4 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .preview-badge {
+            width: 200px;
+            height: 280px;
+            background: #0f1422;
+            border: 2px solid #1a2540;
+            border-radius: 12px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-option:hover {
+            border-color: #00d4ff;
+        }
+
+        .color-option.selected {
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+
+        .alert-error {
+            background: rgba(255, 61, 61, 0.1);
+            border: 1px solid #ff3d3d;
+            color: #ff3d3d;
+        }
+
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav a {
+                display: block;
+                margin-bottom: 10px;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚙️ System Settings</h1>
+        <p>Customize badges, configure system preferences, and manage settings</p>
+    </div>
+
+    <div class="nav">
+        <a href="/dashboard">← Back to Dashboard</a>
+        <a href="/gate-entry">Gate Entry</a>
+        <a href="/pre-register">Pre-Register</a>
+    </div>
+
+    <div class="container">
+        <div id="alert" class="alert"></div>
+
+        <div class="settings-grid">
+            <!-- Badge Customization -->
+            <div class="settings-card">
+                <h3>🪪 Badge Customization</h3>
+
+                <form id="badgeForm">
+                    <div class="form-group">
+                        <label for="companyName">Company Name</label>
+                        <input type="text" id="companyName" name="companyName" value="SAFEGUARD NEXUS" placeholder="Enter company name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="badgeTitle">Badge Title</label>
+                        <input type="text" id="badgeTitle" name="badgeTitle" value="Visitor Access Badge" placeholder="Enter badge title">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logoUpload">Company Logo</label>
+                        <input type="file" id="logoUpload" name="logoUpload" accept="image/*">
+                        <small style="color: #718096; font-size: 12px;">Upload PNG, JPG, or SVG (max 2MB)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Badge Size</label>
+                        <select id="badgeSize" name="badgeSize">
+                            <option value="standard">Standard (320px)</option>
+                            <option value="large">Large (400px)</option>
+                            <option value="mobile">Mobile (280px)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Badge Layout</label>
+                        <select id="badgeLayout" name="badgeLayout">
+                            <option value="vertical">Vertical Layout</option>
+                            <option value="horizontal">Horizontal Layout</option>
+                            <option value="compact">Compact Layout</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Include QR Code</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="includeQR" name="includeQR" checked>
+                            <label for="includeQR">Generate QR code with visitor details</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <select id="theme" name="theme">
+                            <option value="dark">Dark Theme</option>
+                            <option value="light">Light Theme</option>
+                            <option value="auto">Auto (System)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Accent Color</label>
+                        <div class="color-picker">
+                            <div class="color-option selected" style="background: #00d4ff;" data-color="#00d4ff"></div>
+                            <div class="color-option" style="background: #00ff88;" data-color="#00ff88"></div>
+                            <div class="color-option" style="background: #ffb700;" data-color="#ffb700"></div>
+                            <div class="color-option" style="background: #ff3d3d;" data-color="#ff3d3d"></div>
+                            <div class="color-option" style="background: #9c27b0;" data-color="#9c27b0"></div>
+                            <div class="color-option" style="background: #2196f3;" data-color="#2196f3"></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">Save Badge Settings</button>
+                </form>
+            </div>
+
+            <!-- System Configuration -->
+            <div class="settings-card">
+                <h3>🔧 System Configuration</h3>
+
+                <form id="systemForm">
+                    <div class="form-group">
+                        <label for="sessionTimeout">Session Timeout (minutes)</label>
+                        <input type="number" id="sessionTimeout" name="sessionTimeout" value="30" min="5" max="480">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxFileSize">Max Upload Size (MB)</label>
+                        <input type="number" id="maxFileSize" name="maxFileSize" value="16" min="1" max="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alertEmail">Alert Email</label>
+                        <input type="email" id="alertEmail" name="alertEmail" placeholder="alerts@company.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Enable Features</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enableFaceRec" name="enableFaceRec" checked>
+                            <label for="enableFaceRec">Face Recognition</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enableAlerts" name="enableAlerts" checked>
+                            <label for="enableAlerts">Security Alerts</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enableBackup" name="enableBackup" checked>
+                            <label for="enableBackup">Automatic Backup</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn">Save System Settings</button>
+                </form>
+            </div>
+
+            <!-- Email Alert Configuration -->
+            <div class="settings-card">
+                <h3>📧 Email Alert Configuration</h3>
+
+                <form id="emailForm">
+                    <div class="form-group">
+                        <label for="senderEmail">Sender Email</label>
+                        <input type="email" id="senderEmail" name="senderEmail" placeholder="your_email@gmail.com" required>
+                        <small style="color: #718096; font-size: 12px;">Gmail requires app password (not regular password)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="senderPassword">Sender Password / App Password</label>
+                        <input type="password" id="senderPassword" name="senderPassword" placeholder="App password for Gmail" required>
+                        <small style="color: #718096; font-size: 12px;">For Gmail: Use 16-character app password from Google Account settings</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipientEmail">Recipient Email</label>
+                        <input type="email" id="recipientEmail" name="recipientEmail" placeholder="security_team@company.com" required>
+                        <small style="color: #718096; font-size: 12px;">Where security alerts should be sent</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smtpServer">SMTP Server</label>
+                        <input type="text" id="smtpServer" name="smtpServer" value="smtp.gmail.com" placeholder="smtp.gmail.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smtpPort">SMTP Port</label>
+                        <input type="number" id="smtpPort" name="smtpPort" value="587" min="1" max="65535" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Enable Email Alerts</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enableEmailAlerts" name="enableEmailAlerts" checked>
+                            <label for="enableEmailAlerts">Send email alerts for security events</label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Save Email Settings</button>
+                        <button type="button" class="btn btn-secondary" onclick="testEmailSettings()">Test Email</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="settings-card">
+                <h3>💬 Telegram Alert Configuration</h3>
+
+                <form id="telegramForm">
+                    <div class="form-group">
+                        <label for="telegramBotToken">Bot Token</label>
+                        <input type="text" id="telegramBotToken" name="telegramBotToken" placeholder="123456789:ABCDefGhI..." required>
+                        <small style="color: #718096; font-size: 12px;">Get this from @BotFather in Telegram.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telegramChatId">Chat ID</label>
+                        <input type="text" id="telegramChatId" name="telegramChatId" placeholder="123456789" required>
+                        <small style="color: #718096; font-size: 12px;">Use your Telegram user or group chat ID.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Enable Telegram Alerts</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enableTelegramAlerts" name="enableTelegramAlerts" checked>
+                            <label for="enableTelegramAlerts">Send Telegram alerts for security events</label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn">Save Telegram Settings</button>
+                        <button type="button" class="btn btn-secondary" onclick="testTelegramSettings()">Test Telegram</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Badge Preview -->
+            <div class="settings-card">
+                <h3>👁️ Badge Preview</h3>
+                <div class="badge-preview">
+                    <h4>Preview</h4>
+                    <div class="preview-badge">
+                        <div style="font-size: 24px; margin-bottom: 10px;">⬡</div>
+                        <div style="color: #00d4ff; font-weight: bold; margin-bottom: 5px;">SAFEGUARD NEXUS</div>
+                        <div style="color: #718096; font-size: 10px;">VISITOR BADGE</div>
+                        <div style="margin-top: 15px; font-size: 10px; color: #4a5568;">Preview will update with settings</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: 20px;" onclick="testBadge()">Generate Test Badge</button>
+            </div>
+
+            <!-- Export Settings -->
+            <div class="settings-card">
+                <h3>📊 Export & Backup</h3>
+
+                <div class="form-group">
+                    <label>Export Options</label>
+                    <button class="btn btn-secondary" onclick="exportVisitors()">Export Visitor Data (CSV)</button>
+                    <button class="btn btn-secondary" onclick="exportLogs()">Export System Logs (CSV)</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Backup Options</label>
+                    <button class="btn btn-secondary" onclick="createBackup()">Create Database Backup</button>
+                    <button class="btn btn-secondary" onclick="downloadBackup()">Download Latest Backup</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="backupSchedule">Auto Backup Schedule</label>
+                    <select id="backupSchedule" name="backupSchedule">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Color picker functionality
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Form submissions
+        document.getElementById('badgeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveSettings('badge', new FormData(this));
+        });
+
+        document.getElementById('systemForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveSettings('system', new FormData(this));
+        });
+
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveEmailSettings(new FormData(this));
+        });
+
+        document.getElementById('telegramForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveTelegramSettings(new FormData(this));
+        });
+
+        function saveEmailSettings(formData) {
+            fetch('/api/settings/email', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.message || 'Email settings saved successfully!', 'success');
+            })
+            .catch(error => {
+                showAlert('Error saving email settings: ' + error.message, 'error');
+            });
+        }
+
+        function saveTelegramSettings(formData) {
+            fetch('/api/settings/telegram', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.message || 'Telegram settings saved successfully!', 'success');
+            })
+            .catch(error => {
+                showAlert('Error saving Telegram settings: ' + error.message, 'error');
+            });
+        }
+
+        function testEmailSettings() {
+            const formData = new FormData(document.getElementById('emailForm'));
+            
+            fetch('/api/test-email', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('✓ Test email sent successfully! Check your inbox.', 'success');
+                } else {
+                    showAlert('✗ Email test failed: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Error testing email: ' + error.message, 'error');
+            });
+        }
+
+        function testTelegramSettings() {
+            const formData = new FormData(document.getElementById('telegramForm'));
+            
+            fetch('/api/test-telegram', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('✓ Test Telegram sent successfully!', 'success');
+                } else {
+                    showAlert('✗ Telegram test failed: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Error testing Telegram: ' + error.message, 'error');
+            });
+        }
+
+        function saveSettings(type, formData) {
+            // Add selected color to form data
+            const selectedColor = document.querySelector('.color-option.selected');
+            if (selectedColor) {
+                formData.append('accentColor', selectedColor.dataset.color);
+            }
+
+            fetch(`/api/settings/${type}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.message || 'Settings saved successfully!', 'success');
+            })
+            .catch(error => {
+                showAlert('Error saving settings: ' + error.message, 'error');
+            });
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function testBadge() {
+            window.open('/badge/1', '_blank');
+        }
+
+        function exportVisitors() {
+            window.location.href = '/api/export/visitors';
+        }
+
+        function exportLogs() {
+            window.location.href = '/api/export/logs';
+        }
+
+        function createBackup() {
+            fetch('/api/backup/create', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    showAlert(data.message || 'Backup created successfully!', 'success');
+                })
+                .catch(error => {
+                    showAlert('Error creating backup: ' + error.message, 'error');
+                });
+        }
+
+        function downloadBackup() {
+            window.location.href = '/api/backup/download';
+        }
+
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            
+            if (theme === 'light') {
+                root.style.setProperty('--bg-primary', '#ffffff');
+                root.style.setProperty('--bg-secondary', '#f8f9fa');
+                root.style.setProperty('--bg-card', '#ffffff');
+                root.style.setProperty('--text-primary', '#212529');
+                root.style.setProperty('--text-secondary', '#6c757d');
+                root.style.setProperty('--border-color', '#dee2e6');
+                root.style.setProperty('--accent-color', '#007bff');
+                root.style.setProperty('--success-color', '#28a745');
+                root.style.setProperty('--danger-color', '#dc3545');
+            } else {
+                // Dark theme (default)
+                root.style.setProperty('--bg-primary', '#07090f');
+                root.style.setProperty('--bg-secondary', '#0b0e18');
+                root.style.setProperty('--bg-card', '#0f1422');
+                root.style.setProperty('--text-primary', '#e2e8f0');
+                root.style.setProperty('--text-secondary', '#718096');
+                root.style.setProperty('--border-color', '#1a2540');
+                root.style.setProperty('--accent-color', '#00d4ff');
+                root.style.setProperty('--success-color', '#00ff88');
+                root.style.setProperty('--danger-color', '#ff3d3d');
+            }
+            
+            localStorage.setItem('theme', theme);
+        }
+
+        // Apply theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.getElementById('theme').value = savedTheme;
+            applyTheme(savedTheme);
+        });
+
+        // Theme change handler
+        document.getElementById('theme').addEventListener('change', function() {
+            applyTheme(this.value);
+        });
+
+        // Load current settings on page load
+        window.addEventListener('load', function() {
+            fetch('/api/settings')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.badge) {
+                        document.getElementById('companyName').value = data.badge.companyName || 'SAFEGUARD NEXUS';
+                        document.getElementById('badgeTitle').value = data.badge.badgeTitle || 'Visitor Access Badge';
+                        document.getElementById('badgeSize').value = data.badge.badgeSize || 'standard';
+                        document.getElementById('badgeLayout').value = data.badge.badgeLayout || 'vertical';
+                        document.getElementById('includeQR').checked = data.badge.includeQR !== false;
+                        document.getElementById('includePhoto').checked = data.badge.includePhoto !== false;
+
+                        // Set selected color
+                        if (data.badge.accentColor) {
+                            document.querySelectorAll('.color-option').forEach(opt => {
+                                if (opt.dataset.color === data.badge.accentColor) {
+                                    opt.classList.add('selected');
+                                } else {
+                                    opt.classList.remove('selected');
+                                }
+                            });
+                        }
+                    }
+
+                    if (data.system) {
+                        document.getElementById('sessionTimeout').value = data.system.sessionTimeout || 30;
+                        document.getElementById('maxFileSize').value = data.system.maxFileSize || 16;
+                        document.getElementById('alertEmail').value = data.system.alertEmail || '';
+                        document.getElementById('theme').value = data.system.theme || 'dark';
+                        document.getElementById('enableFaceRec').checked = data.system.enableFaceRec !== false;
+                        document.getElementById('enableAlerts').checked = data.system.enableAlerts !== false;
+                        document.getElementById('enableBackup').checked = data.system.enableBackup !== false;
+                    }
+
+                    if (data.email) {
+                        document.getElementById('senderEmail').value = data.email.senderEmail || '';
+                        document.getElementById('senderPassword').value = data.email.senderPassword || '';
+                        document.getElementById('recipientEmail').value = data.email.recipientEmail || '';
+                        document.getElementById('smtpServer').value = data.email.smtpServer || 'smtp.gmail.com';
+                        document.getElementById('smtpPort').value = data.email.smtpPort || 587;
+                        document.getElementById('enableEmailAlerts').checked = data.email.enableEmailAlerts !== false;
+                    }
+
+                    if (data.telegram) {
+                        document.getElementById('telegramBotToken').value = data.telegram.botToken || '';
+                        document.getElementById('telegramChatId').value = data.telegram.chatId || '';
+                        document.getElementById('enableTelegramAlerts').checked = data.telegram.enableTelegram !== false;
+                    }
+                })
+                .catch(error => {
+                    console.log('Could not load settings:', error);
+                });
+        });
+    </script>
+</body>
+</html>

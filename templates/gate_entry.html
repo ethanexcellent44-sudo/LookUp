@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFEGUARD NEXUS - Gate Entry</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #07090f 0%, #0b0e18 100%);
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(26, 37, 64, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(26, 37, 64, 0.1) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: #0f1422;
+            border: 1px solid #1a2540;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #004d5e;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #00d4ff;
+            font-size: 32px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 13px;
+        }
+        
+        .form-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 35px;
+        }
+        
+        .photo-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .photo-preview {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: #0b0e18;
+            border: 2px dashed #1a2540;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .photo-preview:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-preview.empty {
+            color: #718096;
+            font-size: 14px;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .photo-input { display: none; }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        
+        .btn-capture {
+            background: #00ff88;
+            color: #07090f;
+        }
+        
+        .btn-capture:hover {
+            background: #00cc66;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .btn-upload {
+            background: #004d5e;
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+        
+        .btn-upload:hover {
+            background: #006b7d;
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            color: #718096;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        input, select {
+            padding: 12px;
+            background: #0b0e18;
+            border: 1px solid #1a2540;
+            color: #e2e8f0;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: #0b0e18;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+        
+        input::placeholder {
+            color: #4a5568;
+        }
+        
+        .required {
+            color: #ff3d3d;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn-submit {
+            background: #00d4ff;
+            color: #07090f;
+            grid-column: span 2;
+            font-size: 13px;
+        }
+        
+        .btn-submit:hover:not(:disabled) {
+            background: #00a8cc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-submit:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-clear {
+            background: transparent;
+            border: 1px solid #ff3d3d;
+            color: #ff3d3d;
+        }
+        
+        .btn-clear:hover {
+            background: rgba(255, 61, 61, 0.1);
+        }
+        
+        .status-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 12px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .status-success {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .status-error {
+            background: rgba(255, 61, 61, 0.2);
+            color: #ff3d3d;
+            border: 1px solid #ff3d3d;
+        }
+
+        .match-info {
+            display: none;
+            padding: 14px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid #0b4f66;
+            border-radius: 8px;
+            color: #cbd5e0;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .match-info.show {
+            display: block;
+        }
+
+        .match-label {
+            color: #00d4ff;
+            font-size: 12px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        
+        .badge-action {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .badge-action.show {
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .form-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🚪 GATE ENTRY SYSTEM</h1>
+            <p>Check in visitors with face recognition</p>
+        </div>
+        
+        <form id="checkinForm">
+            <div class="form-wrapper">
+                <!-- Photo Section -->
+                <div class="photo-section">
+                    <div class="photo-preview empty" id="photoPreview" onclick="document.getElementById('photoInput').click()">
+                        <span>📷</span>
+                        <span>Click to capture or upload</span>
+                    </div>
+                    <input type="file" id="photoInput" class="photo-input" accept="image/*" onchange="handlePhotoSelect(event)">
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn-capture" onclick="capturePhoto()">Capture</button>
+                        <button type="button" class="btn-upload" onclick="document.getElementById('photoInput').click()">Upload</button>
+                    </div>
+                </div>
+                
+                <!-- Form Section -->
+                <div class="form-section">
+                    <div class="form-group">
+                        <label for="name">Visitor Name <span class="required">*</span></label>
+                        <input type="text" id="name" name="name" placeholder="John Doe" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="purpose">Purpose of Visit <span class="required">*</span></label>
+                        <select id="purpose" name="purpose" required>
+                            <option value="">-- Select Purpose --</option>
+                            <option value="Meeting">Business Meeting</option>
+                            <option value="Delivery">Delivery</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Service">Service Visit</option>
+                            <option value="Event">Event</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contact">Contact Person <span class="required">*</span></label>
+                        <input type="text" id="contact" name="contact_person" placeholder="Name of person to meet" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qrTokenInput">Pre-registration QR / Code</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="text" id="qrTokenInput" placeholder="Scan or paste the code" style="flex:1;">
+                            <button type="button" class="btn-upload" onclick="loadPreRegistration()">Load</button>
+                        </div>
+                    </div>
+                    
+                    <div id="matchInfo" class="match-info">
+                        <div class="match-label">✓ Pre-registration Match Found</div>
+                        <div id="matchDetails"></div>
+                    </div>
+                    
+                    <div id="statusMessage" class="status-message"></div>
+                    <div id="badgeAction" class="badge-action"></div>
+                    <div class="action-buttons">
+                        <button type="submit" class="btn-submit" id="submitBtn">Check In Visitor</button>
+                        <button type="reset" class="btn-clear" onclick="resetForm()">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Camera Setup -->
+    <script>
+        let photoData = null;
+        
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoData = e.target.result;
+                    displayPhoto(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function displayPhoto(src) {
+            const preview = document.getElementById('photoPreview');
+            preview.className = 'photo-preview';
+            preview.innerHTML = `<img src="${src}" alt="Photo Preview">`;
+        }
+        
+        function capturePhoto() {
+            alert('📷 Camera feature requires HTTPS. For development, please use Upload instead.');
+        }
+        
+        function resetForm() {
+            document.getElementById('checkinForm').reset();
+            photoData = null;
+            document.getElementById('photoPreview').className = 'photo-preview empty';
+            document.getElementById('photoPreview').innerHTML = '<span>📷</span><span>Click to capture or upload</span>';
+            document.getElementById('statusMessage').style.display = 'none';
+            document.getElementById('statusMessage').innerHTML = '';
+            document.getElementById('matchInfo').classList.remove('show');
+            document.getElementById('badgeAction').classList.remove('show');
+            document.getElementById('badgeAction').innerHTML = '';
+        }
+        
+        // Auto-match when name is entered
+        document.getElementById('name').addEventListener('blur', async function() {
+            const name = this.value.trim();
+            if (name.length > 2) {
+                try {
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    
+                    const response = await fetch('/api/match-preregistration', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.matched) {
+                        const match = data.preregistration;
+                        document.getElementById('matchInfo').classList.add('show');
+                        document.getElementById('matchDetails').innerHTML = `
+                            <strong>${match.name}</strong> - Pre-registered
+                            <br><small>Purpose: ${match.purpose}</small>
+                            <br><small>Contact: ${match.contact_person}</small>
+                        `;
+                        
+                        // Auto-fill matching fields
+                        document.getElementById('contact').value = match.contact_person;
+                        document.getElementById('purpose').value = match.purpose || 'Other';
+                        if (match.phone) document.getElementById('phone').value = match.phone;
+                    }
+                } catch (e) {
+                    console.error('Match error:', e);
+                }
+            }
+        });
+        
+        // Form submission
+        document.getElementById('checkinForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const statusEl = document.getElementById('statusMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!photoData) {
+                showStatus('Please upload or capture a photo', false);
+                return;
+            }
+            
+            const name = document.getElementById('name').value.trim();
+            const purpose = document.getElementById('purpose').value;
+            const contact = document.getElementById('contact').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const qrToken = document.getElementById('qrTokenInput').value.trim();
+            
+            if (!name || !contact) {
+                showStatus('Name and Contact Person are required', false);
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('purpose', purpose);
+                formData.append('contact_person', contact);
+                formData.append('phone', phone || 'N/A');
+                if (qrToken) {
+                    formData.append('qr_token', qrToken);
+                }
+                
+                // Convert data URL to blob
+                const response = await fetch(photoData);
+                const blob = await response.blob();
+                formData.append('photo', blob, 'photo.jpg');
+                
+                const result = await fetch('/api/visitor-checkin', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await result.json();
+                
+                if (data.success) {
+                        showStatus(`✓ ${data.message}`, true);
+                        
+                        // Show face recognition result
+                        if (data.visitor.face_status === 'VERIFIED') {
+                            statusEl.innerHTML = `${statusEl.innerHTML}<br>✓ Face Match: ${data.visitor.matched_name} (${data.visitor.face_confidence}% confidence)`;
+                        } else if (data.visitor.face_status === 'OBSTRUCTION_ALERT') {
+                            statusEl.innerHTML = `${statusEl.innerHTML}<br>⚠️ Face obstruction detected - Alert sent`;
+                        }
+                        
+                        if (data.badge_url) {
+                            showBadgeLink(data.badge_url);
+                        }
+                    } else {
+                        showStatus(`Error: ${data.error}`, false);
+                    }
+            } catch (e) {
+                showStatus(`Error: ${e.message}`, false);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Check In Visitor';
+            }
+        });
+        
+        function showBadgeLink(url) {
+            const badgeAction = document.getElementById('badgeAction');
+            badgeAction.innerHTML = `<a href="${url}" target="_blank">🖨️ Print Visitor Badge</a>`;
+            badgeAction.classList.add('show');
+        }
+
+        async function loadPreRegistration() {
+            let token = document.getElementById('qrTokenInput').value.trim();
+            if (!token) {
+                showStatus('Enter a QR code or pre-registration token first.', false);
+                return;
+            }
+
+            if (token.startsWith('PRE-REGISTRATION:')) {
+                token = token.replace('PRE-REGISTRATION:', '').trim();
+            }
+
+            try {
+                const response = await fetch(`/api/qr-lookup?token=${encodeURIComponent(token)}`);
+                const data = await response.json();
+
+                if (data.success && data.matched) {
+                    const match = data.preregistration;
+                    document.getElementById('name').value = match.name;
+                    document.getElementById('purpose').value = match.purpose || 'Other';
+                    document.getElementById('contact').value = match.contact_person;
+                    if (match.phone) document.getElementById('phone').value = match.phone;
+                    document.getElementById('matchInfo').classList.add('show');
+                    document.getElementById('matchDetails').innerHTML = `
+                        <strong>${match.name}</strong> - Pre-registered<br>
+                        <small>Purpose: ${match.purpose}</small><br>
+                        <small>Contact: ${match.contact_person}</small><br>
+                        <small>Date: ${match.expected_date} ${match.expected_time || ''}</small>
+                    `;
+                    showStatus('Pre-registration loaded successfully.', true);
+                } else {
+                    showStatus('No pre-registration found for this code.', false);
+                }
+            } catch (e) {
+                showStatus(`Error loading registration: ${e.message}`, false);
+            }
+        }
+
+        function showStatus(message, isSuccess) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.innerHTML = message;
+            statusEl.className = `status-message ${isSuccess ? 'status-success' : 'status-error'}`;
+            statusEl.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

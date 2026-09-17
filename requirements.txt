@@ -1,0 +1,16 @@
+flask
+flask-cors
+werkzeug
+pillow
+opencv-python
+numpy
+customtkinter
+face-recognition
+psutil
+requests
+python-telegram-bot
+dlib
+matplotlib
+pyttsx3
+airllm
+qrcode[pil]
