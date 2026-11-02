@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import cv2
+import numpy as np
 import os
 from datetime import datetime, timedelta
 import sqlite3
