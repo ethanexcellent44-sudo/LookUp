@@ -1,11 +1,13 @@
 flask
 flask-cors
 werkzeug
+setuptools<81
 pillow
 opencv-python
 numpy
 customtkinter
 face-recognition
+face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models
 psutil
 requests
 python-telegram-bot

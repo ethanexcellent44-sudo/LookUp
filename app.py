@@ -275,7 +275,7 @@ def ensure_admin_user():
     c.execute('SELECT COUNT(*) FROM users')
     count = c.fetchone()[0]
     if count == 0:
-        default_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+        default_password = 'admin123'
         password_hash = generate_password_hash(default_password)
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         c.execute(
@@ -315,6 +315,10 @@ def authenticate_user(username, password):
 # --- Face encoding cache (performance) ---
 ENCODINGS_CACHE = None
 ENCODINGS_MTIME = None
+WATCHLIST_CACHE = None
+WATCHLIST_CACHE_TIME = 0.0
+WATCHLIST_CACHE_TTL = 5.0
+WATCHLIST_CACHE_LOCK = threading.Lock()
 
 
 def load_encodings_cached():
@@ -492,16 +496,23 @@ def send_obstruction_alert(visitor_name='Unknown'):
 
 def check_watchlist(name, matched_name=None):
     """Check if a visitor name or matched face name matches any active watchlist record."""
+    global WATCHLIST_CACHE, WATCHLIST_CACHE_TIME
+
     try:
-        conn = get_db()
-        c = conn.cursor()
         names_to_check = [name.strip().lower()]
         if matched_name:
             names_to_check.append(str(matched_name).strip().lower())
-        
-        c.execute('''SELECT * FROM watchlist WHERE status = 'ACTIVE' ''')
-        rows = [dict(r) for r in c.fetchall()]
-        conn.close()
+
+        now = time.time()
+        with WATCHLIST_CACHE_LOCK:
+            if WATCHLIST_CACHE is None or now - WATCHLIST_CACHE_TIME > WATCHLIST_CACHE_TTL:
+                conn = get_db()
+                c = conn.cursor()
+                c.execute("SELECT * FROM watchlist WHERE status = 'ACTIVE'")
+                WATCHLIST_CACHE = [dict(r) for r in c.fetchall()]
+                WATCHLIST_CACHE_TIME = now
+                conn.close()
+            rows = WATCHLIST_CACHE
         
         for row in rows:
             wl_name = row['name'].strip().lower()
@@ -2780,17 +2791,45 @@ class VideoCameraStream:
         self.fps = 0.0
         self.frame_count = 0
         self._last_time = time.time()
-        self.init_camera()
+        self.analysis_interval = 3
+        self._worker = threading.Thread(target=self._capture_loop, daemon=True)
+        self._worker.start()
 
     def init_camera(self):
         try:
             self.cap = cv2.VideoCapture(0)
             if self.cap and self.cap.isOpened():
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
                 self.is_camera_open = True
             else:
                 self.is_camera_open = False
         except Exception:
             self.is_camera_open = False
+
+    def get_frame(self):
+        with self.lock:
+            return self.last_frame
+
+    def _capture_loop(self):
+        self.init_camera()
+        while True:
+            frame = None
+            if self.is_camera_open and self.cap:
+                ret, frame = self.cap.read()
+                if not ret or frame is None:
+                    self.is_camera_open = False
+
+            if frame is None:
+                frame = self.generate_synthetic_frame()
+
+            self.frame_count += 1
+            jpeg = self._process_frame(frame, self.frame_count % self.analysis_interval == 0)
+            if jpeg:
+                with self.lock:
+                    self.last_frame = jpeg
+            time.sleep(1 / 15)
 
     def generate_synthetic_frame(self):
         """High-tech cyberpunk surveillance feed when physical camera is offline/busy."""
@@ -2835,21 +2874,12 @@ class VideoCameraStream:
         cv2.putText(img, "THREAT POSTURE: NOMINAL", (25, height - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 136), 1)
         return img
 
-    def get_frame(self):
-        with self.lock:
-            frame = None
-            if self.is_camera_open and self.cap:
-                ret, frame = self.cap.read()
-                if not ret or frame is None:
-                    self.is_camera_open = False
-            
-            if frame is None:
-                frame = self.generate_synthetic_frame()
-            else:
-                # Real camera frame AI processing
-                frame = cv2.resize(frame, (640, 480))
+    def _process_frame(self, frame, run_ai):
+        frame = cv2.resize(frame, (640, 480))
+        if run_ai and self.is_camera_open:
                 try:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    analysis_frame = cv2.resize(frame, (320, 240))
+                    rgb = cv2.cvtColor(analysis_frame, cv2.COLOR_BGR2RGB)
                     boxes = face_recognition.face_locations(rgb) if face_recognition else []
                     data = load_encodings_cached()
                     
@@ -2879,19 +2909,18 @@ class VideoCameraStream:
                                             color = (0, 255, 136) # Green
                                             label = f"{matched_name} ({conf}%)"
                         
-                        # Draw high-tech HUD brackets
+                        left, right = left * 2, right * 2
+                        top, bottom = top * 2, bottom * 2
                         cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
                         cv2.rectangle(frame, (left, top - 25), (right, top), color, -1)
                         cv2.putText(frame, label, (left + 5, top - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (7, 9, 15), 2)
                 except Exception as fe:
                     pass
-                
-                # Overlay HUD
-                now = datetime.now()
-                cv2.putText(frame, f"REC // {now.strftime('%H:%M:%S')}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 212, 255), 2)
-            
-            ret, jpeg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
-            return jpeg.tobytes() if ret else None
+
+        now = datetime.now()
+        cv2.putText(frame, f"REC // {now.strftime('%H:%M:%S')}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 212, 255), 2)
+        ret, jpeg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+        return jpeg.tobytes() if ret else None
 
 GLOBAL_CAMERA_STREAM = VideoCameraStream()
 
@@ -2902,7 +2931,7 @@ def generate_video_stream():
         if frame_bytes:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        time.sleep(0.04) # ~25 FPS
+        time.sleep(0.066) # ~15 FPS
 
 @app.route('/api/video-feed')
 def video_feed():

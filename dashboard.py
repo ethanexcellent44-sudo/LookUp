@@ -59,11 +59,11 @@ THREAT_LEVELS = {
 # ══════════════════════════════════════════════
 class AlertManager:
     def __init__(self):
-        self.email_sender   = "wearethelegion99@gmail.com"
-        self.email_password = "bydz jfse rofe anff"
-        self.email_receiver = "ethanexcellent33@gmail.com"
-        self.tg_token       = "8741425690:AAEcseZXx4aynPKHNAYH4K95R-SNDBXKIag"
-        self.tg_chat_id     = "7201036895"
+        self.email_sender   = os.environ.get("SENDER_EMAIL", "")
+        self.email_password = os.environ.get("SENDER_PASSWORD", "")
+        self.email_receiver = os.environ.get("ALERT_EMAIL", "")
+        self.tg_token       = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+        self.tg_chat_id     = os.environ.get("TELEGRAM_CHAT_ID", "")
 
     def send_telegram(self, message):
         try:
@@ -255,14 +255,13 @@ class SafeguardEngine:
         self.db      = SafeguardDB()
         self.alerts  = AlertManager()
         self.detector  = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(
-            os.path.join(self.base_dir, "shape_predictor_68_face_landmarks.dat"))
+        self.predictor = None
         self.load_encodings()
         # Object Detection Setup (YOLOv3)
         self.object_detection_enabled = True
         self.yolo_net = None
         self.yolo_classes = []
-        self.load_yolo_model()
+        self.yolo_output_layers = []
         # Config (editable in Settings)
         self.EYE_AR_THRESH        = 0.20
         self.CONFIDENCE_THRESHOLD = 0.50
@@ -286,6 +285,17 @@ class SafeguardEngine:
         self.face_count         = 0
         self.fps                = 0
         self._last_frame_time   = time.time()
+        self.analysis_interval  = 3
+        self.analysis_size      = (320, 240)
+
+    def ensure_runtime_models(self):
+        """Load heavyweight models only when the live monitor is opened."""
+        if self.predictor is None:
+            predictor_path = os.path.join(self.base_dir, "shape_predictor_68_face_landmarks.dat")
+            if os.path.exists(predictor_path):
+                self.predictor = dlib.shape_predictor(predictor_path)
+        if self.yolo_net is None and self.object_detection_enabled:
+            self.load_yolo_model()
 
     def load_encodings(self):
         if os.path.exists(self.data_path):
@@ -439,6 +449,8 @@ class SafeguardEngine:
             self.yolo_net = cv2.dnn.readNetFromDarknet(config_path, weights_path)
             self.yolo_net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
             self.yolo_net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+            layer_names = self.yolo_net.getLayerNames()
+            self.yolo_output_layers = [layer_names[i - 1] for i in self.yolo_net.getUnconnectedOutLayers()]
 
             with open(classes_path, 'r') as f:
                 self.yolo_classes = [line.strip() for line in f.readlines()]
@@ -455,10 +467,7 @@ class SafeguardEngine:
         blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
         self.yolo_net.setInput(blob)
 
-        layer_names = self.yolo_net.getLayerNames()
-        output_layers = [layer_names[i - 1] for i in self.yolo_net.getUnconnectedOutLayers()]
-
-        outputs = self.yolo_net.forward(output_layers)
+        outputs = self.yolo_net.forward(self.yolo_output_layers)
 
         boxes, confidences, class_ids = [], [], []
         for output in outputs:
@@ -1080,7 +1089,10 @@ class SafeguardDashboard(ctk.CTk):
                 return self.caps
             return []
 
-        for idx in (self.engine.camera_index, 0, 1, 2):
+        camera_indexes = [self.engine.camera_index]
+        if self.engine.camera_index != 0:
+            camera_indexes.append(0)
+        for idx in camera_indexes:
             cap = cv2.VideoCapture(idx)
             if cap.isOpened():
                 self.cap = cap
@@ -1138,6 +1150,7 @@ class SafeguardDashboard(ctk.CTk):
     def _show_scanner(self):
         self._clear_view()
         self.engine.running = True
+        self.engine.ensure_runtime_models()
         if self._active_nav != "Live Monitor":
             self._set_active_nav("Live Monitor")
 
@@ -1194,6 +1207,7 @@ class SafeguardDashboard(ctk.CTk):
         self._video_thread.start()
 
     def _video_loop(self):
+        frame_number = 0
         while self.engine.running and not self._stop_event.is_set():
             frames = []
             if self.caps:
@@ -1208,6 +1222,11 @@ class SafeguardDashboard(ctk.CTk):
 
             if not frames:
                 time.sleep(0.05)
+                continue
+
+            frame_number += 1
+            if frame_number % self.engine.analysis_interval:
+                time.sleep(0.005)
                 continue
 
             try:
@@ -1231,8 +1250,30 @@ class SafeguardDashboard(ctk.CTk):
             if frame is None:
                 return None
 
-        # Use hybrid YOLO + Face Recognition approach
-        detection_results = self.engine.detect_persons_and_objects(frame)
+        # Run recognition on a smaller image; the display remains 640x480.
+        analysis_frame = cv2.resize(frame, self.engine.analysis_size)
+        detection_results = self.engine.detect_persons_and_objects(analysis_frame)
+
+        scale_x = frame.shape[1] / analysis_frame.shape[1]
+        scale_y = frame.shape[0] / analysis_frame.shape[0]
+        for face_result in detection_results['face_results']:
+            left, top, right, bottom = face_result['box']
+            face_result['box'] = (
+                int(left * scale_x), int(top * scale_y),
+                int(right * scale_x), int(bottom * scale_y))
+        for obj in detection_results['all_objects']:
+            x, y, width, height = obj['box']
+            obj['box'] = (
+                int(x * scale_x), int(y * scale_y),
+                int(width * scale_x), int(height * scale_y))
+        for alert in detection_results['person_alerts']:
+            x, y, width, height = alert['person']['box']
+            alert['person']['box'] = (int(x * scale_x), int(y * scale_y),
+                                      int(width * scale_x), int(height * scale_y))
+            for obj in alert['nearby_objects']:
+                x, y, width, height = obj['box']
+                obj['box'] = (int(x * scale_x), int(y * scale_y),
+                              int(width * scale_x), int(height * scale_y))
 
         face_results = detection_results['face_results']
         person_alerts = detection_results['person_alerts']
@@ -1248,11 +1289,14 @@ class SafeguardDashboard(ctk.CTk):
             left, top, right, bottom = face_result['box']
 
             # Get facial landmarks for liveness detection
-            rect = dlib.rectangle(left, top, right, bottom)
-            shape = self.engine.predictor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), rect)
-            shape = np.array([[p.x, p.y] for p in shape.parts()])
-            ear = (self.engine.eye_aspect_ratio(shape[36:42]) +
-                   self.engine.eye_aspect_ratio(shape[42:48])) / 2.0
+            shape = None
+            ear = 0.0
+            if self.engine.predictor is not None:
+                rect = dlib.rectangle(left, top, right, bottom)
+                shape = self.engine.predictor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), rect)
+                shape = np.array([[p.x, p.y] for p in shape.parts()])
+                ear = (self.engine.eye_aspect_ratio(shape[36:42]) +
+                       self.engine.eye_aspect_ratio(shape[42:48])) / 2.0
 
             if name not in self.engine.blink_counter:
                 self.engine.blink_counter[name] = 0
@@ -1262,7 +1306,7 @@ class SafeguardDashboard(ctk.CTk):
 
             # Mask detection
             covered = False
-            if self.engine.mask_detection_enabled:
+            if self.engine.mask_detection_enabled and not self.engine.low_power_mode and shape is not None:
                 covered = self.engine.detect_mask_or_face_cover(frame, shape)
                 if covered and (time.time() - self.engine.mask_alert_cooldown) > self.engine.mask_alert_cooldown_secs:
                     self.engine.mask_alert_cooldown = time.time()
